@@ -73,7 +73,7 @@
 % Title
 \begin{center}
     {\LARGE\bfseries The Resonant Consensus Protocol}\\[0.5em]
-    {\large\itshape Cross-Cluster Agreement Classification for Multi-Agent Systems}\\[1.5em]
+    {\large\itshape Cross-Cluster Resonance Classification for Multi-Agent Systems}\\[1.5em]
     {\normalsize Alan J. Garcia}\\[0.5em]
     {\small\href{https://github.com/garciaalan186}{github.com/garciaalan186}}
 \end{center}
@@ -84,13 +84,125 @@
 \section{Overview}
 %----------------------------------------------------------
 
-When multiple LLM agents with different perspectives respond to a query, how should an orchestrator decide which responses represent genuine consensus versus contested positions?
+\subsection{The Problem: Confident Uncertainty}
 
-The Resonant Consensus Protocol classifies artifacts based on \textbf{cross-cluster agreement}: which adversarial groups approve, and how many. This produces a \textbf{Contextual Superposition}—a structured summary that tells the orchestrator not just what was said, but how it resonated across perspectives.
+Large language models face a fundamental tension between helpfulness and epistemic honesty. Standard training objectives prioritize fluent, confident responses, inadvertently incentivizing models to guess rather than acknowledge uncertainty \cite{kalai2025hallucination, wu2025calibrated}. This produces two failure modes:
+
+\begin{enumerate}[noitemsep]
+    \item \textbf{Overconfident errors}: The model generates plausible but incorrect content with unwarranted certainty—a phenomenon widely documented as ``hallucination'' \cite{farquhar2024semantic, huang2025medical}.
+    \item \textbf{Sycophantic agreement}: The model adapts responses to align with perceived user preferences, sacrificing accuracy for approval \cite{sharma2024sycophancy, fanous2025syceval}.
+\end{enumerate}
+
+Both failure modes share a common structure: the model lacks a principled mechanism for representing genuine uncertainty. When multiple valid perspectives exist, or when a query is ambiguous, the model typically selects one framing and commits—leaving the user unaware that the response reflects a contestable position rather than established fact.
+
+\subsection{Cross-Cluster Resonance as a Solution}
+
+The Resonant Consensus Protocol\footnote{This work builds on the Networked Survey, a primary research methodology for quantifying consensus developed by the author in 2013.} addresses this challenge by providing an external signal that is harder to game than internal confidence estimates. Rather than asking a single model ``how confident are you?'', the protocol solicits evaluations from multiple agents with \textit{adversarial} perspectives and classifies artifacts based on \textbf{cross-cluster resonance}.
+
+We define \textit{cross-cluster resonance} as the pattern of endorsement across predefined adversarial groups: an artifact exhibits cross-cluster resonance when approval spans multiple clusters rather than concentrating within a single faction.
+
+The key insight: \textbf{agreement between parties with opposing incentives is stronger evidence than agreement between parties with aligned incentives}. An artifact endorsed by both an advocate cluster and a critic cluster has survived genuine cross-examination. An artifact endorsed only by advocates—or rejected by all—carries different epistemic weight.
+
+This classification produces a \textbf{Cross-Cluster Resonance State}—a structured summary that tells the orchestrator not just what was said, but how it resonated across perspectives. Crucially, contestation is treated as information, not failure. When artifacts are contested or rejected, the orchestrator gains a principled basis for surfacing uncertainty, requesting clarification, or presenting multiple perspectives—rather than gambling on the ``best guess.''
 
 %----------------------------------------------------------
-\section{General Framework}
+\section{Binary Framework ($n = 2$)}
 %----------------------------------------------------------
+
+We begin with the binary case—two adversarial clusters—which provides the clearest illustration of cross-cluster resonance and forms the foundation for generalization.
+
+\subsection{Setup}
+
+Let $C^+$ and $C^-$ denote two adversarial clusters (e.g., advocate vs.\ critic, optimist vs.\ skeptic). Each cluster evaluates each artifact, producing a binary approval:
+
+\begin{equation}
+\text{Approve}_{C^+}(\omega), \text{Approve}_{C^-}(\omega) \in \{0, 1\}
+\end{equation}
+
+This yields four possible outcomes, corresponding to four classification tiers.
+
+\subsection{Four-Tier Classification}
+
+\begin{center}
+\begin{tikzpicture}[scale=1.2]
+    % Grid
+    \draw[thick] (0,0) rectangle (4,4);
+    \draw[thick] (2,0) -- (2,4);
+    \draw[thick] (0,2) -- (4,2);
+    
+    % Quadrant fills
+    \fill[consensusbg] (2,2) rectangle (4,4);  % Both approve
+    \fill[cullbg] (0,0) rectangle (2,2);        % Both reject
+    \fill[polarbg] (2,0) rectangle (4,2);       % C+ approves, C- rejects
+    \fill[polarbg!70!cullbg] (0,2) rectangle (2,4); % C+ rejects, C- approves
+    
+    % Quadrant labels
+    \node[align=center] at (3, 3) {\textbf{Positive}\\\textbf{Consensus}};
+    \node[align=center] at (1, 1) {\textbf{Negative}\\\textbf{Consensus}};
+    \node[align=center] at (3, 1) {\textbf{Positive}\\\textbf{Polar}};
+    \node[align=center] at (1, 3) {\textbf{Negative}\\\textbf{Polar}};
+    
+    % Axis labels
+    \node[below] at (1, 0) {Reject};
+    \node[below] at (3, 0) {Approve};
+    \node[below] at (2, -0.5) {$C^+$ (Reference Cluster)};
+    
+    \node[left, rotate=90, anchor=south] at (0, 1) {Reject};
+    \node[left, rotate=90, anchor=south] at (0, 3) {Approve};
+    \node[left, rotate=90, anchor=south] at (-0.5, 2) {$C^-$};
+\end{tikzpicture}
+\end{center}
+
+\vspace{1em}
+
+\begin{greenbox}[Positive Consensus \normalfont{— $C^+$ approves, $C^-$ approves}]
+Both adversarial clusters endorse this artifact. It has survived cross-examination from opposing perspectives and represents robust, cross-cutting resonance.
+\end{greenbox}
+
+\begin{redbox}[Negative Consensus \normalfont{— $C^+$ rejects, $C^-$ rejects}]
+Both adversarial clusters reject this artifact. Cross-cluster agreement that the artifact is flawed, unsupported, or inappropriate.
+\end{redbox}
+
+\begin{orangebox}[Positive Polar \normalfont{— $C^+$ approves, $C^-$ rejects}]
+The reference cluster endorses this artifact, but the opposing cluster rejects it. The artifact reflects the $C^+$ perspective specifically.
+\end{orangebox}
+
+\begin{tcolorbox}[colback=polarbg!70!cullbg, colframe=purple!60!black, fonttitle=\bfseries, title=Negative Polar \normalfont{— $C^+$ rejects, $C^-$ approves}, boxrule=0.5pt, arc=2pt]
+The reference cluster rejects this artifact, but the opposing cluster endorses it. The artifact reflects the $C^-$ perspective specifically.
+\end{tcolorbox}
+
+\subsection{Multi-Dimensional Assessment}
+
+Rather than prescribing specific actions for each tier, the protocol provides a multi-dimensional assessment that the orchestrator interprets based on context:
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Tier} & \textbf{Contestation} & \textbf{Bias Direction} & \textbf{Risk if Acted Upon} \\
+\midrule
+Positive Consensus & Low & Neutral & Low \\
+Negative Consensus & Low & Neutral & High \\
+Positive Polar & High & $C^+$ & Moderate \\
+Negative Polar & High & $C^-$ & Moderate \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.5em}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Contestation}: How disputed is this artifact across clusters?
+    \item \textbf{Bias Direction}: Which cluster's perspective does this artifact reflect?
+    \item \textbf{Risk if Acted Upon}: Epistemic risk of treating this artifact as authoritative.
+\end{itemize}
+
+This structure enables the orchestrator to make context-appropriate decisions: a Negative Consensus artifact might still be presented to the user with appropriate framing (``both perspectives rejected this approach because...''), while a Positive Polar artifact might prompt the orchestrator to surface the disagreement or request clarification.
+
+%----------------------------------------------------------
+\section{Generalization ($n > 2$)}
+%----------------------------------------------------------
+
+The binary framework extends naturally to $n$ clusters by designating a \textbf{reference cluster} $C_1$ and computing a \textbf{resonance ratio} across all clusters.
 
 \subsection{Components}
 
@@ -98,12 +210,11 @@ The Resonant Consensus Protocol classifies artifacts based on \textbf{cross-clus
 \begin{itemize}[noitemsep, topsep=0pt]
     \item \textbf{Agents} $\mathcal{A} = \{a_1, \ldots, a_m\}$ — LLM instances with distinct system prompts
     \item \textbf{Clusters} $\mathcal{C} = \{C_1, \ldots, C_n\}$ — Partition of agents into $n$ adversarial groups
+    \item \textbf{Reference Cluster} $C_1$ — Designated cluster for determining positive/negative polarity
     \item \textbf{Artifacts} $\Omega = \{\omega_1, \ldots, \omega_k\}$ — Responses generated by agents
     \item \textbf{Votes} $v(\omega, a) \in \{0, 1\}$ — Agent $a$'s approval of artifact $\omega$
 \end{itemize}
 \end{defbox}
-
-Clusters are defined at design time based on system prompt orientation. Each cluster represents a distinct perspective designed to stress-test artifacts from other viewpoints (e.g., advocate vs.\ critic, technical vs.\ business, optimist vs.\ skeptic).
 
 \subsection{Cluster Approval}
 
@@ -118,39 +229,34 @@ For each artifact $\omega$ and cluster $C_i$, we determine whether the cluster a
 
 Where $\theta_i \in (0, 1]$ is the approval threshold for cluster $C_i$. By default, $\theta_i = \theta$ for all clusters (a global threshold, typically $0.5$ for simple majority).
 
-\subsection{The Approval Set}
+\subsection{Approval Set and Resonance Ratio}
 
-The \textbf{approval set} is the set of clusters that approve an artifact:
+The \textbf{approval set} captures which clusters approved:
 
 \begin{equation}
 S(\omega) = \{C_i \in \mathcal{C} : \text{Approve}_i(\omega) = 1\}
 \end{equation}
 
-This captures \textit{which} clusters approved, not just how many.
-
-\subsection{Agreement Ratio}
-
-The \textbf{agreement ratio} normalizes the approval set cardinality:
+The \textbf{resonance ratio} normalizes this (where $|\cdot|$ denotes the number of elements in a set):
 
 \begin{equation}
 \rho(\omega) = \frac{|S(\omega)|}{n} \in [0, 1]
 \end{equation}
 
-This represents the fraction of clusters that approve the artifact.
+\subsection{Four-Tier Classification (General Case)}
 
-%----------------------------------------------------------
-\section{Classification}
-%----------------------------------------------------------
-
-Artifacts are classified into three tiers based on the agreement ratio $\rho(\omega)$ and a threshold parameter $\tau \in (0.5, 1]$:
+Classification depends on both the resonance ratio $\rho(\omega)$ and whether the reference cluster $C_1$ approves:
 
 \begin{equation}
 \text{Tier}(\omega) = \begin{cases}
-\textbf{Consensus} & \text{if } \rho(\omega) \geq \tau \\[0.5em]
-\textbf{Polar} & \text{if } 1 - \tau < \rho(\omega) < \tau \\[0.5em]
-\textbf{Reject} & \text{if } \rho(\omega) \leq 1 - \tau
+\textbf{Positive Consensus} & \text{if } \rho(\omega) \geq \tau \text{ and } C_1 \in S(\omega) \\[0.5em]
+\textbf{Negative Consensus} & \text{if } \rho(\omega) \leq 1 - \tau \\[0.5em]
+\textbf{Positive Polar} & \text{if } 1 - \tau < \rho(\omega) < \tau \text{ and } C_1 \in S(\omega) \\[0.5em]
+\textbf{Negative Polar} & \text{if } 1 - \tau < \rho(\omega) < \tau \text{ and } C_1 \notin S(\omega)
 \end{cases}
 \end{equation}
+
+Where $\tau \in (0.5, 1]$ is the consensus threshold.
 
 \vspace{1em}
 
@@ -171,50 +277,25 @@ Artifacts are classified into three tiers based on the agreement ratio $\rho(\om
     \fill[consensusbg] (7,0.4) rectangle (10,1.0);
     
     % Region labels
-    \node at (1.5, 0.7) {\textbf{Reject}};
-    \node at (5, 0.7) {\textbf{Polar}};
-    \node at (8.5, 0.7) {\textbf{Consensus}};
+    \node at (1.5, 0.7) {\small\textbf{Neg. Cons.}};
+    \node at (5, 0.7) {\small\textbf{Polar}};
+    \node at (8.5, 0.7) {\small\textbf{Pos. Cons.}};
     
     % Axis label
-    \node[below] at (5, -0.7) {Agreement Ratio $\rho(\omega)$};
+    \node[below] at (5, -0.7) {Resonance Ratio $\rho(\omega)$};
     
     % Boundaries
     \draw[dashed, gray] (3, 0) -- (3, 1.0);
     \draw[dashed, gray] (7, 0) -- (7, 1.0);
+    
+    % Note about polarity
+    \node[below] at (5, -1.2) {\small\textit{(Polar tier: positive/negative determined by $C_1$ membership)}};
 \end{tikzpicture}
 \end{center}
 
-\vspace{1em}
-
-The threshold $\tau$ controls the boundaries symmetrically:
-\begin{itemize}[noitemsep]
-    \item Higher $\tau$ (e.g., $0.8$) → stricter consensus requirement, wider Polar band
-    \item Lower $\tau$ (e.g., $0.6$) → more permissive consensus, narrower Polar band
-    \item $\tau = 0.5$ → no Polar tier (binary: Consensus or Reject)
-    \item $\tau = 1.0$ → only unanimous approval counts as Consensus
-\end{itemize}
-
-\subsection{Tier Definitions}
-
-\begin{greenbox}[Consensus \normalfont{— $\rho(\omega) \geq \tau$}]
-A strong majority of clusters approve. This artifact resonates across adversarial perspectives and represents robust agreement.\\[0.5em]
-\textbf{Action: GROUND} — Use as primary context for response synthesis.\\[0.5em]
-\textit{Special case:} When $|S(\omega)| = n$ (all clusters approve), this is \textbf{Full Consensus}—the highest confidence level. The orchestrator may flag this distinction.
-\end{greenbox}
-
-\begin{orangebox}[Polar \normalfont{— $1 - \tau < \rho(\omega) < \tau$}]
-Mixed approval—some clusters approve, others reject. This artifact is contested; it may represent a valid perspective but not cross-cutting agreement.\\[0.5em]
-\textbf{Action: CONTEXTUALIZE} — Include with attribution to approving clusters.
-\end{orangebox}
-
-\begin{redbox}[Reject \normalfont{— $\rho(\omega) \leq 1 - \tau$}]
-A strong majority of clusters reject. This artifact fails cross-examination and should be discarded.\\[0.5em]
-\textbf{Action: EXCLUDE} — Do not include in response synthesis.
-\end{redbox}
-
 \subsection{Note on Empty Tiers}
 
-For small $n$ or certain values of $\tau$, the Polar tier may be empty (no discrete $\rho$ values fall in the range). This is expected behavior, not an error—it simply means the system operates in binary mode for that configuration.
+For small $n$ or certain values of $\tau$, the Polar tier may be empty (no discrete $\rho$ values fall in the range). This is expected behavior—the system operates in binary mode for that configuration.
 
 %----------------------------------------------------------
 \section{The Binary Case ($n = 2$)}
@@ -288,7 +369,7 @@ This is the fraction of non-authoring agents who approved, regardless of cluster
 
 \subsection{Optional: Consensus Balance Bonus}
 
-For Consensus artifacts, balanced approval across clusters may be preferred. An optional refinement penalizes lopsided agreement:
+For Consensus artifacts, balanced approval across clusters may be preferred. An optional refinement penalizes lopsided approval:
 
 \begin{equation}
 \text{Score}_{\text{balanced}}(\omega) = \text{Score}(\omega) \times \left(1 - \sigma_S(\omega)\right)
@@ -325,18 +406,26 @@ For $n = 2$, this simplifies to:
 These are high-value artifacts for constructing balanced responses.
 
 %----------------------------------------------------------
-\section{The Contextual Superposition}
+\section{The Cross-Cluster Resonance State}
 %----------------------------------------------------------
 
-The protocol outputs a \textbf{Contextual Superposition} for each artifact—a structured summary for the orchestrator:
+The protocol outputs a \textbf{Cross-Cluster Resonance State} for each artifact—a structured summary providing multi-dimensional assessment for the orchestrator:
 
-\begin{defbox}[Superposition Object]
+\begin{defbox}[Resonance State Object]
 \begin{verbatim}
-Superposition(ω) = {
+ResonanceState(ω) = {
     artifact: ω,
     approval_set: S(ω),
-    agreement_ratio: ρ(ω),
-    tier: Consensus | Polar | Reject,
+    resonance_ratio: ρ(ω),
+    tier: PositiveConsensus | NegativeConsensus | 
+          PositivePolar | NegativePolar,
+    
+    // Multi-dimensional assessment
+    contestation: Low | High,
+    bias_direction: Neutral | C_1 | "non-C_1",
+    risk_if_acted_upon: Low | Moderate | High,
+    
+    // Metadata
     score: Score(ω),
     author_cluster: C_i,
     is_persuasive: boolean,
@@ -345,26 +434,50 @@ Superposition(ω) = {
 \end{verbatim}
 \end{defbox}
 
-The orchestrator receives a list of these objects, grouped by tier and sorted by score.
+\subsection{Assessment Dimensions}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Contestation}: Derived from tier. Consensus tiers (positive or negative) have low contestation; Polar tiers have high contestation.
+    
+    \item \textbf{Bias Direction}: For Polar artifacts, indicates which perspective the artifact reflects. \texttt{Neutral} for Consensus tiers; reference cluster ($C_1$) or opposing clusters for Polar tiers.
+    
+    \item \textbf{Risk if Acted Upon}: Epistemic risk of treating this artifact as authoritative without additional context.
+    \begin{itemize}[noitemsep]
+        \item \textit{Low}: Positive Consensus—cross-cluster endorsement provides strong validation.
+        \item \textit{Moderate}: Polar—valid perspective but reflects specific cluster's view.
+        \item \textit{High}: Negative Consensus—cross-cluster rejection signals significant concerns.
+    \end{itemize}
+\end{itemize}
+
+The orchestrator receives a list of these objects, enabling context-appropriate decisions. Crucially, even Negative Consensus artifacts carry information: ``all perspectives rejected this'' may be exactly what the user needs to understand.
 
 %----------------------------------------------------------
-\section{Orchestrator Actions}
+\section{Orchestrator Guidance}
 %----------------------------------------------------------
+
+The orchestrator interprets Resonance States based on context and user needs. The following patterns illustrate common responses:
 
 \begin{center}
-\begin{tabular}{@{}llp{6.5cm}@{}}
+\begin{tabular}{@{}lp{8cm}@{}}
 \toprule
-\textbf{Tier} & \textbf{Action} & \textbf{Guidance} \\
+\textbf{Tier} & \textbf{Possible Orchestrator Responses} \\
 \midrule
-Consensus (Full) & \textsc{Ground} & Highest confidence. Lead with these points. \\
-Consensus (Partial) & \textsc{Ground} & High confidence. Note dissenting clusters if relevant. \\
-Polar & \textsc{Contextualize} & Include with attribution: ``From [cluster] perspective...'' \\
-Reject & \textsc{Exclude} & Do not reference. \\
+Positive Consensus & Present with confidence. Cross-cluster endorsement provides strong validation. \\
 \addlinespace
-Persuasive & \textsc{Emphasize} & Strong bridge-building points. \\
+Negative Consensus & Surface the rejection: ``Both perspectives identified concerns with...'' May prompt clarification from user or acknowledge limitation. \\
+\addlinespace
+Positive Polar & Present with attribution: ``From the [reference cluster] perspective...'' Consider surfacing the disagreement. \\
+\addlinespace
+Negative Polar & Present with attribution to opposing cluster. May indicate user's framing aligns with a specific perspective. \\
+\addlinespace
+Mixed results & When no Consensus exists, orchestrator may: request clarification, present multiple perspectives explicitly, or acknowledge genuine ambiguity. \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\vspace{0.5em}
+
+The key principle: \textbf{contestation is information, not failure}. When the protocol reveals disagreement, the orchestrator gains a principled basis for structured uncertainty—acknowledging what is known, what is contested, and what requires further input.
 
 %----------------------------------------------------------
 \section{Algorithm}
@@ -373,9 +486,9 @@ Persuasive & \textsc{Emphasize} & Strong bridge-building points. \\
 \begin{algorithm}[H]
 \caption{Resonant Consensus Protocol}
 \begin{algorithmic}[1]
-\Require Agents $\mathcal{A}$ partitioned into clusters $\mathcal{C} = \{C_1, \ldots, C_n\}$
+\Require Agents $\mathcal{A}$ partitioned into clusters $\mathcal{C} = \{C_1, \ldots, C_n\}$ with reference cluster $C_1$
 \Require Query $q$, thresholds $\theta$ (cluster approval), $\tau$ (consensus)
-\Ensure List of Superposition objects for orchestrator
+\Ensure List of Resonance State objects for orchestrator
 \State
 \State \textbf{// Phase 1: Generate}
 \For{each $a \in \mathcal{A}$}
@@ -398,22 +511,25 @@ Persuasive & \textsc{Emphasize} & Strong bridge-building points. \\
     \EndFor
     \State $S(\omega) \gets \{C_i : \text{Approve}_i(\omega) = 1\}$
     \State $\rho(\omega) \gets |S(\omega)| / n$
+    \State $\text{refApproves} \gets C_1 \in S(\omega)$
     \State
     \If{$\rho(\omega) \geq \tau$}
-        \State $\text{tier} \gets \textsc{Consensus}$
-    \ElsIf{$\rho(\omega) > 1 - \tau$}
-        \State $\text{tier} \gets \textsc{Polar}$
+        \State $\text{tier} \gets \textsc{PositiveConsensus}$ \Comment{All high-$\rho$ are positive}
+    \ElsIf{$\rho(\omega) \leq 1 - \tau$}
+        \State $\text{tier} \gets \textsc{NegativeConsensus}$
+    \ElsIf{$\text{refApproves}$}
+        \State $\text{tier} \gets \textsc{PositivePolar}$
     \Else
-        \State $\text{tier} \gets \textsc{Reject}$
+        \State $\text{tier} \gets \textsc{NegativePolar}$
     \EndIf
     \State
-    \State Compute $\text{Score}(\omega)$
-    \State Build Superposition object
+    \State Compute $\text{Score}(\omega)$, assessment dimensions
+    \State Build Resonance State object
 \EndFor
 \State
 \State \textbf{// Phase 4: Return}
-\State Sort by tier (Consensus $>$ Polar $>$ Reject), then by Score descending
-\State \Return list of Superposition objects
+\State Group by tier, sort by Score descending within each tier
+\State \Return list of Resonance State objects
 \end{algorithmic}
 \end{algorithm}
 
@@ -488,17 +604,17 @@ This allows agents to refine positions based on verified common ground.
 \section{Summary}
 %----------------------------------------------------------
 
-The Resonant Consensus Protocol classifies multi-agent outputs by cross-cluster agreement:
+The Resonant Consensus Protocol classifies multi-agent outputs by cross-cluster resonance:
 
 \begin{enumerate}[noitemsep]
-    \item Partition agents into $n$ adversarial clusters
+    \item Partition agents into $n$ adversarial clusters with designated reference cluster $C_1$
     \item Collect binary approval votes on each artifact
-    \item Compute approval set $S(\omega)$ and agreement ratio $\rho(\omega)$
-    \item Classify into Consensus / Polar / Reject based on threshold $\tau$
-    \item Return Contextual Superposition to orchestrator
+    \item Compute approval set $S(\omega)$ and resonance ratio $\rho(\omega)$
+    \item Classify into four tiers based on $\tau$ and reference cluster membership
+    \item Return Cross-Cluster Resonance State with multi-dimensional assessment
 \end{enumerate}
 
-The key insight: \textbf{who agrees matters as much as how many agree}. An artifact with 60\% approval is Consensus if that support spans clusters, but Polar if concentrated in one. This distinction enables orchestrators to separate robust insights from tribal bias.
+The key insight: \textbf{who endorses an artifact matters as much as how many endorse it}. An artifact with 60\% approval is Positive Consensus if that support spans clusters, but Polar if concentrated in one. This distinction enables orchestrators to separate robust insights from factional positions—and to represent genuine uncertainty rather than gambling on best guesses.
 
 \vspace{2em}
 
@@ -511,11 +627,11 @@ The key insight: \textbf{who agrees matters as much as how many agree}. An artif
 \toprule
 \textbf{Symbol} & \textbf{Definition} \\
 \midrule
-$\mathcal{C} = \{C_1, \ldots, C_n\}$ & Set of adversarial clusters \\
+$\mathcal{C} = \{C_1, \ldots, C_n\}$ & Set of adversarial clusters ($C_1$ = reference) \\
 $v(\omega, a)$ & Binary vote: agent $a$ approves artifact $\omega$ \\
 $\theta_i$ & Approval threshold for cluster $C_i$ \\
 $S(\omega)$ & Approval set: clusters that approve $\omega$ \\
-$\rho(\omega) = |S(\omega)|/n$ & Agreement ratio \\
+$\rho(\omega) = |S(\omega)|/n$ & Resonance ratio \\
 $\tau$ & Consensus threshold \\
 \bottomrule
 \end{tabular}
@@ -524,15 +640,55 @@ $\tau$ & Consensus threshold \\
 \vspace{1em}
 
 \begin{center}
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}llll@{}}
 \toprule
-\textbf{Condition} & \textbf{Tier} & \textbf{Action} \\
+\textbf{Tier} & \textbf{Condition} & \textbf{Contestation} & \textbf{Risk} \\
 \midrule
-$\rho \geq \tau$ & Consensus & \textsc{Ground} \\
-$1 - \tau < \rho < \tau$ & Polar & \textsc{Contextualize} \\
-$\rho \leq 1 - \tau$ & Reject & \textsc{Exclude} \\
+Positive Consensus & $\rho \geq \tau$ & Low & Low \\
+Negative Consensus & $\rho \leq 1 - \tau$ & Low & High \\
+Positive Polar & $1{-}\tau < \rho < \tau$, $C_1 \in S$ & High & Moderate \\
+Negative Polar & $1{-}\tau < \rho < \tau$, $C_1 \notin S$ & High & Moderate \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+%----------------------------------------------------------
+\section*{References}
+%----------------------------------------------------------
+
+\begin{thebibliography}{9}
+
+\bibitem{kalai2025hallucination}
+Kalai, A.T., Ramchandran, S.K., Vempala, S.S., \& Zhang, R.J. (2025).
+Why language models hallucinate.
+\textit{OpenAI Research}.
+\url{https://openai.com/index/why-language-models-hallucinate/}
+
+\bibitem{wu2025calibrated}
+Wu, J., et al. (2025).
+Mitigating LLM hallucination via behaviorally calibrated reinforcement learning.
+\textit{arXiv preprint} arXiv:2512.19920.
+
+\bibitem{farquhar2024semantic}
+Farquhar, S., Kossen, J., Kuhn, L., \& Gal, Y. (2024).
+Detecting hallucinations in large language models using semantic entropy.
+\textit{Nature}, 630, 625--630.
+
+\bibitem{huang2025medical}
+Huang, Q., et al. (2025).
+Medical hallucination in foundation models and their impact on healthcare.
+\textit{medRxiv preprint}.
+
+\bibitem{sharma2024sycophancy}
+Sharma, M., et al. (2024).
+Sycophancy in large language models: Causes and mitigations.
+\textit{arXiv preprint} arXiv:2411.15287.
+
+\bibitem{fanous2025syceval}
+Fanous, A., Goldberg, J., et al. (2025).
+SycEval: Evaluating LLM sycophancy.
+\textit{arXiv preprint} arXiv:2502.08177.
+
+\end{thebibliography}
 
 \end{document}

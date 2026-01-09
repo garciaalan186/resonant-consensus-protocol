@@ -1,52 +1,66 @@
 # The Resonant Consensus Protocol
 
-**A method for finding genuine agreement among AI agents with different perspectives.**
+**A method for introducing structured uncertainty into multi-agent AI systems.**
 
 ## The Problem
 
-When you ask multiple AI experts for their opinion, you get multiple answers. Some answers might be biased toward a particular viewpoint. Others might represent genuine insight that everyone can agree on. 
+Large language models face a fundamental tension: they're trained to sound confident, even when they shouldn't be. This leads to two failure modes:
 
-How do you tell the difference?
+1. **Hallucination**: The model generates plausible but incorrect content with unwarranted certainty.
+2. **Sycophancy**: The model adapts responses to match what it thinks the user wants to hear.
+
+Both problems share a root cause: the model lacks a principled way to represent genuine uncertainty. When multiple valid perspectives exist, or when a query is ambiguous, the model typically picks one framing and commits—leaving the user unaware they're seeing a contestable position rather than established fact.
 
 ## The Solution
 
-The Resonant Consensus Protocol solves this by checking *who* agrees with each answer, not just *how many* agree.
+The Resonant Consensus Protocol provides an external signal that's harder to game than internal confidence estimates. Rather than asking a single model "how confident are you?", the protocol:
 
-Here's the key insight: **an idea that's only popular with one group is probably biased, but an idea that resonates across opposing groups is probably sound.**
+1. Solicits evaluations from multiple agents with **adversarial perspectives**
+2. Classifies artifacts based on **cross-cluster resonance**—which opposing groups endorsed them
+3. Returns a structured assessment that treats **contestation as information, not failure**
+
+The key insight: **endorsement from parties with opposing incentives is stronger evidence than endorsement from parties with aligned incentives.**
 
 ## How It Works
 
-1. **Set up adversarial teams.** Divide your AI agents into groups with different perspectives—for example, an "advocate" team and a "critic" team.
+1. **Set up adversarial clusters.** Divide your AI agents into groups with different perspectives—for example, an "advocate" cluster (C⁺) and a "critic" cluster (C⁻).
 
 2. **Generate responses.** Each agent answers the question from their perspective.
 
 3. **Cross-evaluate.** Each agent votes on whether they endorse the other agents' responses.
 
-4. **Classify by agreement pattern.** Responses fall into three categories:
+4. **Classify by resonance pattern.** Responses fall into four tiers:
 
-   | Category | What it means | What to do |
-   |----------|---------------|------------|
-   | **Consensus** | Both teams approve | Use this—it's robust |
-   | **Polar** | Only one team approves | Use with caution, note the bias |
-   | **Reject** | Neither team approves | Discard it |
+   | Tier | C⁺ | C⁻ | Contestation | Risk |
+   |------|----|----|--------------|------|
+   | **Positive Consensus** | ✓ | ✓ | Low | Low |
+   | **Negative Consensus** | ✗ | ✗ | Low | High |
+   | **Positive Polar** | ✓ | ✗ | High | Moderate |
+   | **Negative Polar** | ✗ | ✓ | High | Moderate |
 
-5. **Return to orchestrator.** The system tells you not just what was said, but how it held up to cross-examination.
+5. **Return multi-dimensional assessment.** The orchestrator receives not just tier classification, but contestation level, bias direction, and epistemic risk—enabling context-appropriate decisions.
 
 ## Why It Matters
 
-Most AI systems treat all outputs equally, or just pick the most confident one. This protocol recognizes that **cross-cutting agreement is a signal of quality**—ideas that survive scrutiny from opposing viewpoints are more likely to be genuinely useful.
+When the protocol reveals disagreement, the orchestrator gains a principled basis for:
+
+- **Surfacing uncertainty**: "These perspectives disagree on..."
+- **Requesting clarification**: "Could you specify whether you mean X or Y?"
+- **Presenting multiple views**: "From one perspective... from another..."
+- **Acknowledging limitations**: "Both approaches have concerns about..."
+
+This moves from **guessing the right answer** to **accurately representing the epistemic landscape**.
 
 ## Example
 
 Imagine asking a panel about a business decision:
 
-- The "optimist" team says: *"This will double revenue!"*
-- The "skeptic" team says: *"This has serious risks."*
-- Both teams agree: *"The core technology is sound, but the timeline is aggressive."*
+- The "advocate" cluster says: *"This will double revenue!"* → **Positive Polar**
+- The "critic" cluster says: *"This has serious risks."* → **Negative Polar**
+- Both clusters agree: *"The core technology is sound, but the timeline is aggressive."* → **Positive Consensus**
+- Both clusters reject: *"We can guarantee 10x returns."* → **Negative Consensus**
 
-The third response is **Consensus**—it survived cross-examination. The first two are **Polar**—valid perspectives, but biased toward one viewpoint.
-
-A smart orchestrator leads with the consensus and presents the polar views as "on one hand... on the other hand..."
+A smart orchestrator leads with Positive Consensus, presents Polar views with attribution, and flags Negative Consensus as a claim that failed cross-examination.
 
 ## Learn More
 
@@ -58,7 +72,7 @@ If you use this work, please cite:
 
 ```bibtex
 @article{garcia2025resonant,
-  title={The Resonant Consensus Protocol: Cross-Cluster Agreement Classification for Multi-Agent Systems},
+  title={The Resonant Consensus Protocol: Cross-Cluster Resonance Classification for Multi-Agent Systems},
   author={Garcia, Alan J.},
   year={2025}
 }
